@@ -99,27 +99,158 @@ yarn build
 
     trigger(eventName, context) — Сделать коллбек триггер, генерирующий событие при вызове.
 
-## Добавленные классы
+## Классы слоя Model
 
-1) Класс Modal - управляет модальными окнами для отображения контента (детали товара, корзина, формы заказа).
+1) Класс ProductModel - управляет данными о товарах, запрашивая их через Api.
 
 Свойства:
 
-    container: HTMLElement — контейнер модального окна (#modal-container).
-
-    closeButton: HTMLButtonElement — кнопка закрытия (.modal__close).
-
-    content: HTMLElement — контейнер для содержимого (.modal__content).
+    api: IApiClient — клиент API для запросов.
 
 Методы:
 
-    open(content: HTMLElement) — открывает модальное окно с заданным содержимым.
+    getProducts(): Promise<Product[]> — получает все товары.
 
-    close() — закрывает модальное окно.
+    getProductById(id: string): Promise<Product> — получает товар по ID.
+
+
+2) Класс CartModel - управляет корзиной, храня товары и подсчитывая сумму.
+
+Свойства:
+
+    items: CartItem[] — массив товаров в корзине.
+
+    productModel: IProductModel — модель для получения цен.
+
+Методы:
+
+    addItem(productId: string, quantity: number): void — добавляет товар.
+
+    removeItem(productId: string): void — удаляет товар.
+
+    getItems(): CartItem[] — возвращает товары.
+
+    getTotal(): Promise<number> — подсчитывает сумму.
+
+    clear(): void — очищает корзину.
+
+
+3) Класс OrderModel - формирует и отправляет заказ.
+
+Свойства:
+
+    api: IApiClient — клиент API.
+
+    cart: ICartModel — модель корзины.
+
+    order: Partial<Order> — данные заказа.
+
+Методы:
+
+    setPaymentMethod(method: 'online' | 'cash'): void — задаёт оплату.
+
+    setDeliveryAddress(address: string): void — задаёт адрес.
+
+    setContactInfo(email: string, phone: string): void — задаёт контакты.
+
+    submitOrder(): Promise<void> — отправляет заказ.
+
+
+## Классы слоя View
+
+1) Класс MainPage - отображает главную страницу с каталогом товаров и управляет корзиной.
+
+Свойства:
+
+    gallery: HTMLElement — контейнер каталога (.gallery).
+
+    basketButton: HTMLButtonElement — кнопка корзины (.header__basket).
+
+    basketCounter: HTMLElement — счётчик товаров (.header__basket-counter).
+
+Методы:
+
+    render(products: Product[]): void — рендерит каталог.
+
+    updateCounter(count: number): void — обновляет счётчик.
+
+
+2) Класс Card - создаёт экземпляры карточек для трёх шаблонов (#card-catalog, #card-preview, #card-basket).
+
+Свойства:
+
+    element: HTMLElement — клонированный шаблон карточки.
+
+Методы:
+
+    render(data: Product | CartItem, index?: number): void — заполняет шаблон данными.
+
+    setClickHandler(handler: () => void): void — устанавливает обработчик клика.
+
+
+3) Класс Modal - управляет модальными окнами.
+
+Свойства:
+
+    container: HTMLElement — #modal-container.
+
+    closeButton: HTMLButtonElement — .modal__close.
+
+    content: HTMLElement — .modal__content.
+
+Методы:
+
+    open(content: HTMLElement): void — открывает окно.
+
+    close(): void — закрывает окно.
+
+
+4) Класс CartView - Рендерит корзину в модальном окне.
+
+Свойства:
+
+    list: HTMLUListElement — список товаров (.basket__list).
+
+    total: HTMLElement — сумма (.basket__price).
+
+    checkoutButton: HTMLButtonElement — кнопка оформления (.basket__button).
+
+Методы:
+
+    render(items: CartItem[], total: number): void — рендерит корзину.
+
+
+5) Класс CheckoutView - управляет формами заказа (#order, #contacts).
+
+Свойства:
+
+    step1Form: HTMLFormElement — форма оплаты/адреса.
+
+    step2Form: HTMLFormElement — форма контактов.
+
+Методы:
+
+    renderStep1(): void — рендерит первый шаг.
+
+    renderStep2(): void — рендерит второй шаг.
+
+
+6) Класс SuccessView - отображает успех заказа.
+
+Свойства:
+
+    description: HTMLElement — текст суммы (.order-success__description).
+
+    closeButton: HTMLButtonElement — кнопка закрытия (.order-success__close).
+
+Методы:
+
+    render(total: number): void — рендерит окно.
 
 ## Типы данных
 
-1) Product - описывает товар, получаемый от API. Используется для отображения в каталоге, деталях и расчёта цен.
+1) Product - описывает структуру товара, получаемого от API.
+Используется для отображения в каталоге, деталях и расчёта цен.
 
 Свойства:
 
@@ -139,7 +270,7 @@ yarn build
     quantity: number; // Количество единиц
 
 
-3) Order - Описывает заказ для отправки на сервер.
+3) Order - описывает структуру заказа для отправки на сервер.
 
 Свойства: 
 
@@ -149,89 +280,3 @@ yarn build
     deliveryAddress: string; - Адрес доставки
     contactEmail: string; - Email покупателя
     contactPhone: string; - Телефон покупателя
-
-
-## Интерфейсы API
-
-IApiClient - определяет методы взаимодействия с сервером, реализованные в классе Api
-
-Методы:
-
-    getProducts(): Promise<Product[]>; - Получение списка товаров
-    getProductById(id: string): Promise<Product>; - Получение товара по ID
-    submitOrder(order: Order): Promise<void>; - Отправка заказа
-
-
-## Интерфейсы моделей
-
-1) IProductModel - управляет данными о товарах, запрашивая их через IApiClient.
-
-Методы:
-
-    getProducts(): Promise<Product[]>; - Получение всех товаров
-    getProductById(id: string): Promise<Product>; - Получение товара по ID
-
-
-2) ICartModel - управляет состоянием корзины, храня CartItem[] и подсчитывая сумму.
-
-Методы:
-
-    addItem(productId: string, quantity: number): void; - Добавление товара
-    removeItem(productId: string): void; - Удаление товара
-    getItems(): CartItem[]; - Получение списка товаров
-    getTotal(): number; - Подсчёт общей суммы
-    clear(): void; - Очистка корзины
-
-
-3) IOrderModel - Формирует заказ и отправляет его на сервер.
-
-Методы:
-
-    setPaymentMethod(method: 'online' | 'cash'): void; - Установка способа оплаты
-    setDeliveryAddress(address: string): void; - Установка адреса
-    setContactInfo(email: string, phone: string): void; - Установка контактов
-    submitOrder(): Promise<void>; - Отправка заказа
-
-
-## Интерфейсы отображений
-
-1) IProductCatalogView - генерирует каталог товаров в <main class="gallery">
-
-Методы:
-
-    render(products: Product[]): void; - Рендер каталога
-    onProductSelect(callback: (productId: string) => void): void; - Обработчик выбора товара
-
-
-2) IProductDetailView - генерирует детали товара в модальном окне с шаблоном #card-preview
-
-Методы: 
-
-    render(product: Product): void; - Рендер деталей товара
-    onAddToCart(callback: (productId: string, quantity: number) => void): void; - Обработчик добавления в корзину
-    onRemoveFromCart(callback: (productId: string) => void): void; - Обработчик удаления из корзины
-
-
-3) ICartView - генерирует корзину в модальном окне с шаблоном #basket
-
-Методы:
-
-    render(items: CartItem[], total: number): void; - Рендер корзины
-    onCheckout(callback: () => void): void; - Обработчик перехода к оформлению
-
-
-4) ICheckoutView - управляет оформлением заказа с формами #order и #contacts.
-
-Методы: 
-
-    renderStep1(): void; - Рендер первого шага (оплата и адрес)
-    renderStep2(): void; - Рендер второго шага (контакты)
-    onProceed(callback: () => void): void; - Обработчик перехода к шагу 2
-    onSubmit(callback: () => void): void; - Обработчик отправки заказа
-
-
-5) ISuccessView - генерирует сообщение об успешном заказе с шаблоном #success
-
-Методы: 
-
-    render(total: number): void; - Рендер успешного заказа
