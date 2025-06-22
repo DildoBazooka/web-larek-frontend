@@ -7,6 +7,7 @@ export type Product = {
     price: number; // Цена в синапсах
     image: string; // URL изображения (из CDN)
     category: string; // Категория (например, "софт-скил", "другое")
+    title: string;
 };
 
 /* CartItem описывает товар в корзине, связывая его с Product через productId.*/
@@ -24,6 +25,20 @@ export type Order = {
     contactEmail: string; // Email покупателя
     contactPhone: string; // Телефон покупателя
 };
+
+export type FormErrors = {
+    address?: string;
+    payment?: string;
+    email?: string;
+    phone?: string;
+};
+export type TOrderInfo = {
+    address: string;
+    email: string;
+    phone: string;
+    payment: string;
+};
+
 
 /* IApiClient определяет контракт для взаимодействия с сервером через HTTP-запросы.
 Реализуется классом Api.*/
@@ -59,9 +74,15 @@ export interface IOrderModel {
     submitOrder(): Promise<void>; // Отправка заказа
 }
 
-/* IModal определяет контракт для управления модальными окнами.
-Реализуется классом Modal.*/
-export interface IModal {
-    open(content: HTMLElement): void; // Открывает модальное окно с содержимым
-    close(): void; // Закрывает модальное окно
+// Элемент корзины, отображаемый в UI
+export interface IBasketItem {
+	id: string;
+	index: number;
+	title: string;
+	price: number;
+}
+
+// Действия для элемента корзины
+export interface IBasketItemActions {
+	onClick?: (event: MouseEvent) => void;
 }
