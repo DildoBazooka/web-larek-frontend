@@ -158,94 +158,56 @@ yarn build
 
 ## Классы слоя View
 
-1) Класс MainPage - отображает главную страницу с каталогом товаров и управляет корзиной.
+1) Класс Card - создает экземпляры карточек для каталога, корзины и предпросмотра.
 
 Свойства:
 
-    gallery: HTMLElement — контейнер каталога (.gallery).
-
-    basketButton: HTMLButtonElement — кнопка корзины (.header__basket).
-
-    basketCounter: HTMLElement — счётчик товаров (.header__basket-counter).
+    cardElement: HTMLElement — клонированный шаблон карточки.
+    category: HTMLElement — элемент категории.
+    image: HTMLImageElement — изображение товара.
+    product: Product — данные товара.
+    events: EventEmitter — брокер событий.
 
 Методы:
 
-    render(products: Product[]): void — рендерит каталог.
+    render(product: Product): HTMLElement — заполняет шаблон данными товара.
+    set cardCategory(value: string): void — устанавливает класс и текст категории.
 
-    updateCounter(count: number): void — обновляет счётчик.
-
-
-2) Класс Card - создаёт экземпляры карточек для трёх шаблонов (#card-catalog, #card-preview, #card-basket).
+2) Класс Modal - управляет модальными окнами.
 
 Свойства:
 
-    element: HTMLElement — клонированный шаблон карточки.
+    container: HTMLElement — контейнер модального окна (#modal-container).
+    closeButton: HTMLButtonElement — кнопка закрытия (.modal__close).
+    modalContent: HTMLElement — содержимое модального окна (.modal__content).
 
 Методы:
 
-    render(data: Product | CartItem, index?: number): void — заполняет шаблон данными.
-
-    setClickHandler(handler: () => void): void — устанавливает обработчик клика.
-
-
-3) Класс Modal - управляет модальными окнами.
-
-Свойства:
-
-    container: HTMLElement — #modal-container.
-
-    closeButton: HTMLButtonElement — .modal__close.
-
-    content: HTMLElement — .modal__content.
-
-Методы:
-
-    open(content: HTMLElement): void — открывает окно.
-
+    open(): void — открывает окно.
     close(): void — закрывает окно.
 
-
-4) Класс CartView - Рендерит корзину в модальном окне.
-
-Свойства:
-
-    list: HTMLUListElement — список товаров (.basket__list).
-
-    total: HTMLElement — сумма (.basket__price).
-
-    checkoutButton: HTMLButtonElement — кнопка оформления (.basket__button).
-
-Методы:
-
-    render(items: CartItem[], total: number): void — рендерит корзину.
-
-
-5) Класс CheckoutView - управляет формами заказа (#order, #contacts).
+3) Класс Form/OrderContactsForm - управляет формами заказа (оплата/адрес и контакты).
 
 Свойства:
 
-    step1Form: HTMLFormElement — форма оплаты/адреса.
-
-    step2Form: HTMLFormElement — форма контактов.
+    formNode: HTMLElement — DOM-узел формы.
+    appState: AppState — глобальное состояние приложения.
 
 Методы:
 
-    renderStep1(): void — рендерит первый шаг.
+    render(): HTMLElement — возвращает DOM-узел формы.
+    (Валидация и обновление состояния реализованы через appState.)
 
-    renderStep2(): void — рендерит второй шаг.
-
-
-6) Класс SuccessView - отображает успех заказа.
+4) Класс Success - отображает окно успешного заказа.
 
 Свойства:
 
-    description: HTMLElement — текст суммы (.order-success__description).
-
-    closeButton: HTMLButtonElement — кнопка закрытия (.order-success__close).
+    appState: AppState — глобальное состояние приложения.
+    template: HTMLTemplateElement — шаблон окна успеха.
 
 Методы:
 
-    render(total: number): void — рендерит окно.
+    render(): HTMLElement — возвращает DOM-узел окна успеха с суммой заказа.
 
 ## Типы данных
 
@@ -280,3 +242,21 @@ yarn build
     deliveryAddress: string; - Адрес доставки
     contactEmail: string; - Email покупателя
     contactPhone: string; - Телефон покупателя
+
+4) FormErrors — структура ошибок формы.
+
+Свойства:
+
+    address?: string; // Ошибка в адресе
+    payment?: string; // Ошибка в выборе оплаты
+    email?: string;   // Ошибка в email
+    phone?: string;   // Ошибка в телефоне
+
+5) TOrderInfo — структура информации о заказе (используется для заполнения заказа).
+
+Свойства:
+
+    address: string; // Адрес доставки
+    email: string;   // Email покупателя
+    phone: string;   // Телефон покупателя
+    payment: string; // Способ оплаты ('card' | 'cash')
