@@ -1,10 +1,10 @@
-import { IOrderModel, Order, IApiClient, ICartModel } from '../types';
+import { IOrderModel, IApiClient, ICartModel, ApiOrder } from '../types';
 
 export class OrderModel implements IOrderModel {
   private paymentMethod: 'online' | 'cash' | null = null;
-  private deliveryAddress: string = '';
-  private contactEmail: string = '';
-  private contactPhone: string = '';
+  private deliveryAddress = '';
+  private contactEmail = '';
+  private contactPhone = '';
 
   constructor(private api: IApiClient, private cart: ICartModel) {}
 
@@ -22,27 +22,50 @@ export class OrderModel implements IOrderModel {
   }
 
   async submitOrder(): Promise<void> {
-    if (!this.paymentMethod) throw new Error('Способ оплаты не выбран');
-    if (!this.deliveryAddress) throw new Error('Адрес доставки пуст');
-    if (!this.contactEmail || !/^\S+@\S+\.\S+$/.test(this.contactEmail)) throw new Error('Недействительный или пустой адрес электронной почты');
-    if (!this.contactPhone || !/^\+?\d{10,}$/.test(this.contactPhone)) throw new Error('Недействительный или пустой телефон');
-    if (!this.cart.getItems().length) throw new Error('Корзина пуста');
+    const cartItems = this.cart.getItems();
+    if (!cartItems.length) {
+      throw new Error('Корзина пуста');
+    }
 
-    const order: Order = {
-      id: crypto.randomUUID(),
-      items: this.cart.getItems(),
-      paymentMethod: this.paymentMethod,
-      deliveryAddress: this.deliveryAddress,
-      contactEmail: this.contactEmail,
-      contactPhone: this.contactPhone,
+    if (!this.paymentMethod) {
+      throw new Error('Способ оплаты не выбран');
+    }
+
+    if (!this.deliveryAddress) {
+      throw new Error('Адрес доставки пуст');
+    }
+
+    if (!this.contactEmail || !/^\S+@\S+\.\S+$/.test(this.contactEmail)) {
+      throw new Error('Недействительный или пустой адрес электронной почты');
+    }
+
+    if (!this.contactPhone || !/^\+?\d{10,}$/.test(this.contactPhone)) {
+      throw new Error('Недействительный или пустой телефон');
+    }
+
+    const total = cartItems.reduce((sum, item) => {
+      if (typeof item.product.price !== 'number') {
+        throw new Error('Отсутствует цена у товара в корзине');
+      }
+      return sum + item.product.price * item.quantity;
+    }, 0);
+
+    const orderRequest: ApiOrder = {
+      items: cartItems.map(item => item.product.id),
+      payment: this.paymentMethod,
+      address: this.deliveryAddress,
+      email: this.contactEmail,
+      phone: this.contactPhone,
+      total,
     };
 
     try {
-      await this.api.submitOrder(order);
+      await this.api.submitOrder(orderRequest);
       this.cart.clear();
     } catch (error) {
-      console.error('Не удалось отправить заказ:', error);
-      throw new Error('Невозможно отправить заказ');
+      throw new Error(
+        `Не удалось отправить заказ: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

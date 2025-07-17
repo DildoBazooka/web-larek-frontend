@@ -7,14 +7,14 @@ import { CartModel } from './models/CartModel';
 
 import { Card } from './components/Card';
 import { Basket } from './components/Basket';
-import { Form } from './components/Form';
 import { Modal } from './components/Modal';
 import { Success } from './components/Success';
 import { BasketItem } from './components/BasketItem';
-import { OrderContactsForm } from './components/Form';
+import { OrderForm } from './components/OrderForm';
+import { OrderContactsForm } from './components/OrderContactsForm';
 
 import { ensureElement } from './utils/utils';
-import { Product } from './types';
+import { Product, Order } from './types';
 import { AppState } from './components/AppState';
 
 const api = new WebLarekApi();
@@ -47,15 +47,16 @@ function updateBasketCounter() {
 }
 
 async function renderBasket() {
-  const itemsData = await Promise.all(cartModel.getItems().map(async (item: any, index: number) => {
-    const product = await productModel.getProductById(item.productId);
-    return { product, quantity: item.quantity, index: index + 1 };
-  }));
+  const itemsData = cartModel.getItems().map((item, index) => ({
+  product: item.product,
+  quantity: item.quantity,
+  index: index + 1
+}));
   const items = itemsData.map(({ product, quantity, index }) =>
     new BasketItem(product, quantity, () => {
       cartModel.removeItem(product.id);
       events.emit('cart:changed');
-    }, index)
+    }, index).render()
   );
   const total = itemsData.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0);
   modal.content = basket.render(items, total);
@@ -102,21 +103,21 @@ events.on('basket:open', () => {
   modal.open();
 });
 
-
 events.on('order:start', () => {
-  const orderForm = new Form(appState);
+  const orderForm = new OrderForm(appState, events);
   modal.content = orderForm.element;
   modal.open();
 });
 
-events.on('order:submit', async () => {
-  const contactsForm = new OrderContactsForm(appState);
+events.on('order:submit', () => {
+  const contactsForm = new OrderContactsForm(appState, events);
   modal.content = contactsForm.element;
   modal.open();
 });
 
 events.on('order:success', async () => {
-  const success = new Success(appState);
+  const total = await cartModel.getTotal();
+  const success = new Success(total);
   const node = success.render();
   const buttonEl = node.querySelector('.order-success__close');
   if (buttonEl) buttonEl.addEventListener('click', () => {
@@ -134,15 +135,43 @@ events.on('order:confirmed', () => {
 
 events.on('contacts:confirmed', async () => {
   const order = appState.getOrder();
-  if (order) {
-    let total = 0;
-    for (const item of cartModel.getItems()) {
-      const product = await productModel.getProductById(item.productId);
-      total += product.price * item.quantity;
-    }
-    (order as any).total = total;
+
+  if (!order?.payment || !order?.address || !order?.email || !order?.phone) {
+    const missing = [
+      !order?.payment && 'способ оплаты',
+      !order?.address && 'адрес',
+      !order?.email && 'email',
+      !order?.phone && 'телефон'
+    ].filter(Boolean).join(', ');
+    alert(`Заполните все обязательные поля: ${missing}`);
+    return;
   }
-  events.emit('order:success');
+
+  const cartItems = cartModel.getItems();
+  if (!cartItems.length) {
+    alert('Корзина пуста. Добавьте товары перед оформлением заказа.');
+    return;
+  }
+
+  const orderToSend = {
+    payment: order.payment,
+    email: order.email,
+    phone: order.phone,
+    address: order.address,
+    total: await cartModel.getTotal(),
+    items: cartItems.map(item => item.product.id)
+  };
+
+  try {
+    if (orderToSend.items.some(id => !id)) {
+      throw new Error('Обнаружены товары без ID');
+    }
+
+    await api.submitOrder(orderToSend);
+    events.emit('order:success');
+  } catch (error) {
+    alert(`Ошибка при отправке заказа: ${error.message}`);
+  }
 });
 
 events.on('modal: page.scrollLocked', (payload: { lock: boolean }) => {

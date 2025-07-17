@@ -10,7 +10,6 @@ export class ProductModel implements IProductModel {
       this.products = await this.api.getProducts();
       return [...this.products];
     } catch (error) {
-      console.error('Не удалось получить продукты:', error);
       throw new Error('Невозможно получить продукты');
     }
   }
@@ -27,7 +26,6 @@ export class ProductModel implements IProductModel {
       }
       return product;
     } catch (error) {
-      console.error('Не удалось получить продукт ${id}:', error);
       throw new Error('Продукт с идентификатором ${id} не найдено');
     }
   }

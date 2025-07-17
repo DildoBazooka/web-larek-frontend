@@ -1,4 +1,3 @@
-import { BasketItem } from './BasketItem';
 import { IEvents } from '../components/base/events';
 
 export class Basket {
@@ -27,9 +26,8 @@ export class Basket {
         return this.element;
     }
 
-    render(items: BasketItem[], total: number): HTMLElement {
-        this.listElement.innerHTML = '';
-        this.listElement.append(...items.map(item => item.basketItem));
+    render(items: HTMLElement[], total: number): HTMLElement {
+        this.listElement.replaceChildren(...items);
         this.setTotalPrice(total);
         this.setOrderButtonEnabled(items.length > 0);
         return this.element;

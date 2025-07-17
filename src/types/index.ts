@@ -12,26 +12,35 @@ export type Product = {
 
 /* CartItem описывает товар в корзине, связывая его с Product через productId.*/
 export type CartItem = {
-    productId: string; // ID товара в корзине
+    product: Product; // Объект товара
     quantity: number; // Количество единиц
 };
 
 /* Order описывает структуру заказа для отправки на сервер.*/
 export type Order = {
-    id: string; // ID заказа
     items: CartItem[]; // Список товаров
-    paymentMethod: 'online' | 'cash'; // Способ оплаты
-    deliveryAddress: string; // Адрес доставки
-    contactEmail: string; // Email покупателя
-    contactPhone: string; // Телефон покупателя
+    payment: 'online' | 'cash'; // Способ оплаты
+    address: string; // Адрес доставки
+    email: string; // Email покупателя
+    phone: string; // Телефон покупателя
+    total: number; // Общая сумма заказа
 };
 
+/* ApiOrder — упрощённая версия заказа, отправляемая на сервер.
+   Вместо объектов CartItem содержит только массив ID товаров. */
+export type ApiOrder = Omit<Order, 'items'> & {
+    items: string[]; // Массив ID товаров
+};
+
+/* FormErrors описывает возможные ошибки валидации полей формы заказа. */
 export type FormErrors = {
     address?: string;
     payment?: string;
     email?: string;
     phone?: string;
 };
+
+/* TOrderInfo — структура данных, вводимых пользователем на форме оформления заказа. */
 export type TOrderInfo = {
     address: string;
     email: string;
@@ -39,13 +48,12 @@ export type TOrderInfo = {
     payment: string;
 };
 
-
 /* IApiClient определяет контракт для взаимодействия с сервером через HTTP-запросы.
 Реализуется классом Api.*/
 export interface IApiClient {
     getProducts(): Promise<Product[]>; // Получение списка товаров
     getProductById(id: string): Promise<Product>; // Получение товара по ID
-    submitOrder(order: Order): Promise<void>; // Отправка заказа
+    submitOrder(order: ApiOrder): Promise<void>; // Отправка заказа
 }
 
 /*IProductModel определяет контракт для управления данными о товарах.
