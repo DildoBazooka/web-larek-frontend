@@ -121,7 +121,6 @@ events.on('order:success', async () => {
   const node = success.render();
   const buttonEl = node.querySelector('.order-success__close');
   if (buttonEl) buttonEl.addEventListener('click', () => {
-    cartModel.clear();
     updateBasketCounter();
     modal.close();
   });
@@ -168,11 +167,16 @@ events.on('contacts:confirmed', async () => {
     }
 
     await api.submitOrder(orderToSend);
+    
+    cartModel.clear();
+    updateBasketCounter();
+    
     events.emit('order:success');
   } catch (error) {
     alert(`Ошибка при отправке заказа: ${error.message}`);
   }
 });
+
 
 events.on('modal: page.scrollLocked', (payload: { lock: boolean }) => {
   if (payload.lock) {
